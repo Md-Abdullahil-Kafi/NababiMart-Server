@@ -3,24 +3,25 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import rootRoutes from "./routes/index.js";
+import connectDB from "./config/db.js";
 
 dotenv.config();
+connectDB();
 
 const app = express();
 
-// middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: [
+      "http://localhost:5173",
+      process.env.CLIENT_URL
+    ].filter(Boolean),
     credentials: true,
   })
 );
 
 app.use(express.json());
 app.use(morgan("dev"));
-
-// routes
-app.use("/api", rootRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -29,8 +30,15 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/api/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "API route working"
+  });
+});
 
-// 404 handler
+app.use("/api", rootRoutes);
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,
