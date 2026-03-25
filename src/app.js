@@ -3,19 +3,14 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import rootRoutes from "./routes/index.js";
-import connectDB from "./config/db.js";
 
 dotenv.config();
-connectDB();
 
 const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      process.env.CLIENT_URL
-    ].filter(Boolean),
+    origin: process.env.CLIENT_URL,
     credentials: true,
   })
 );
@@ -26,14 +21,14 @@ app.use(morgan("dev"));
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Backend is running"
+    message: "Backend is running",
   });
 });
 
 app.get("/api/test", (req, res) => {
   res.json({
     success: true,
-    message: "API route working"
+    message: "API route working",
   });
 });
 
