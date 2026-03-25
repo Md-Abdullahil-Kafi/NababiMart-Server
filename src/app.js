@@ -22,6 +22,14 @@ app.use(morgan("dev"));
 // routes
 app.use("/api", rootRoutes);
 
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Backend is running"
+  });
+});
+
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
