@@ -1,4 +1,5 @@
 import Banner from "../models/banner.model.js";
+import mongoose from "mongoose";
 
 // get all banners
 export const getBanners = async (req, res) => {
@@ -20,6 +21,13 @@ export const getBanners = async (req, res) => {
 // create banner
 export const createBanner = async (req, res) => {
   try {
+    if (!req.body?.title) {
+      return res.status(400).json({
+        success: false,
+        message: "Banner title is required",
+      });
+    }
+
     const banner = await Banner.create(req.body);
 
     res.status(201).json({
@@ -38,11 +46,26 @@ export const createBanner = async (req, res) => {
 // update banner
 export const updateBanner = async (req, res) => {
   try {
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid banner id",
+      });
+    }
+
     const banner = await Banner.findByIdAndUpdate(
-      req.params.id,
+      id,
       req.body,
       { new: true }
     );
+
+    if (!banner) {
+      return res.status(404).json({
+        success: false,
+        message: "Banner not found",
+      });
+    }
 
     res.json({
       success: true,
@@ -60,7 +83,21 @@ export const updateBanner = async (req, res) => {
 // delete banner
 export const deleteBanner = async (req, res) => {
   try {
-    await Banner.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid banner id",
+      });
+    }
+
+    const deleted = await Banner.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Banner not found",
+      });
+    }
 
     res.json({
       success: true,

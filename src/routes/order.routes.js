@@ -7,14 +7,15 @@ import {
   updateOrderStatus,
   updatePaymentStatus,
 } from "../controllers/order.controller.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-router.post("/", createOrder);
-router.get("/", getAllOrders);
-router.get("/user/:email", getUserOrders);
-router.patch("/:id/cancel", cancelOrderByUser);
-router.patch("/:id/status", updateOrderStatus);
-router.patch("/:id/payment-status", updatePaymentStatus);
+router.post("/", requireAuth, createOrder);
+router.get("/", requireAuth, requireAdmin, getAllOrders);
+router.get("/user/:email", requireAuth, getUserOrders);
+router.patch("/:id/cancel", requireAuth, cancelOrderByUser);
+router.patch("/:id/status", requireAuth, requireAdmin, updateOrderStatus);
+router.patch("/:id/payment-status", requireAuth, requireAdmin, updatePaymentStatus);
 
 export default router;

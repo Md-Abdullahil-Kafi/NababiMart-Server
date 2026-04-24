@@ -12,11 +12,20 @@ export const createOrder = async (req, res) => {
       totalAmount,
       paymentMethod,
     } = req.body;
+    const authEmail = req.auth?.email;
+    const authUid = req.auth?.uid;
 
-    if (!userId || !userEmail) {
+    if (!userId || !userEmail || !authEmail || !authUid) {
       return res.status(400).json({
         success: false,
         message: "User information is required",
+      });
+    }
+
+    if (authEmail !== userEmail || authUid !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to place order for another user.",
       });
     }
 
@@ -27,10 +36,30 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    if (!shippingInfo) {
+    if (
+      !shippingInfo?.fullName ||
+      !shippingInfo?.email ||
+      !shippingInfo?.phone ||
+      !shippingInfo?.address ||
+      !shippingInfo?.city
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Shipping information is required",
+        message: "Complete shipping information is required",
+      });
+    }
+
+    if (shippingInfo.email !== userEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Shipping email must match signed-in user email",
+      });
+    }
+
+    if (typeof totalAmount !== "number" || totalAmount < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid total amount",
       });
     }
 
@@ -77,6 +106,21 @@ export const getAllOrders = async (req, res) => {
 export const getUserOrders = async (req, res) => {
   try {
     const { email } = req.params;
+    const requester = req.auth?.email;
+
+    if (!requester) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized.",
+      });
+    }
+
+    if (requester !== email) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view your own orders.",
+      });
+    }
 
     const orders = await Order.find({ userEmail: email }).sort({ createdAt: -1 });
 
@@ -96,7 +140,7 @@ export const getUserOrders = async (req, res) => {
 export const cancelOrderByUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userEmail } = req.body;
+    const userEmail = req.auth?.email;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -114,7 +158,7 @@ export const cancelOrderByUser = async (req, res) => {
       });
     }
 
-    if (order.userEmail !== userEmail) {
+    if (!userEmail || order.userEmail !== userEmail) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to cancel this order",

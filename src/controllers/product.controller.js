@@ -53,6 +53,14 @@ export const getSingleProduct = async (req, res) => {
 // CREATE product
 export const createProduct = async (req, res) => {
     try {
+        const { title, price } = req.body;
+        if (!title || typeof price !== "number") {
+            return res.status(400).json({
+                success: false,
+                message: "title and numeric price are required",
+            });
+        }
+
         const product = await Product.create(req.body);
 
         res.status(201).json({
@@ -71,11 +79,26 @@ export const createProduct = async (req, res) => {
 // UPDATE product
 export const updateProduct = async (req, res) => {
     try {
+        const { id } = req.params;
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product id",
+            });
+        }
+
         const product = await Product.findByIdAndUpdate(
-            req.params.id,
+            id,
             req.body,
             { new: true }
         );
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found",
+            });
+        }
 
         res.json({
             success: true,
@@ -93,7 +116,21 @@ export const updateProduct = async (req, res) => {
 // DELETE product
 export const deleteProduct = async (req, res) => {
     try {
-        await Product.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product id",
+            });
+        }
+
+        const deleted = await Product.findByIdAndDelete(id);
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found",
+            });
+        }
 
         res.json({
             success: true,
