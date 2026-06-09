@@ -1,5 +1,13 @@
 import User from "../models/user.model.js";
 
+const getAdminEmailsFromEnv = () =>
+  (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+const normalizeEmail = (email = "") => email.trim().toLowerCase();
+
 // create or update user
 export const createUser = async (req, res) => {
   try {
@@ -14,21 +22,33 @@ export const createUser = async (req, res) => {
       });
     }
 
-    if (authEmail !== email || authUid !== uid) {
+    if (normalizeEmail(authEmail) !== normalizeEmail(email) || authUid !== uid) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to create or update another user",
       });
     }
 
+    const adminEmails = getAdminEmailsFromEnv();
+    const shouldBeAdmin = adminEmails.includes(normalizeEmail(email));
+
     let user = await User.findOne({ email });
 
     if (!user) {
-      user = await User.create({ uid, name, email, photoURL });
+      user = await User.create({
+        uid,
+        name,
+        email,
+        photoURL,
+        role: shouldBeAdmin ? "admin" : "user",
+      });
     } else {
       user.name = name || user.name;
       user.photoURL = photoURL || user.photoURL;
       user.uid = uid;
+      if (shouldBeAdmin) {
+        user.role = "admin";
+      }
       await user.save();
     }
 
@@ -51,7 +71,7 @@ export const getUserByEmail = async (req, res) => {
     const requestedEmail = req.params.email;
     const authEmail = req.auth?.email;
 
-    if (!authEmail || requestedEmail !== authEmail) {
+    if (!authEmail || normalizeEmail(requestedEmail) !== normalizeEmail(authEmail)) {
       return res.status(403).json({
         success: false,
         message: "You can only access your own profile.",

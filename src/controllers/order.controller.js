@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Order from "../models/order.model.js";
 
+const normalizeEmail = (email = "") => email.trim().toLowerCase();
+
 // Create a new order
 export const createOrder = async (req, res) => {
   try {
@@ -22,7 +24,7 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    if (authEmail !== userEmail || authUid !== userId) {
+    if (normalizeEmail(authEmail) !== normalizeEmail(userEmail) || authUid !== userId) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to place order for another user.",
@@ -49,7 +51,7 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    if (shippingInfo.email !== userEmail) {
+    if (normalizeEmail(shippingInfo.email) !== normalizeEmail(userEmail)) {
       return res.status(400).json({
         success: false,
         message: "Shipping email must match signed-in user email",
@@ -115,7 +117,7 @@ export const getUserOrders = async (req, res) => {
       });
     }
 
-    if (requester !== email) {
+    if (normalizeEmail(requester) !== normalizeEmail(email)) {
       return res.status(403).json({
         success: false,
         message: "You can only view your own orders.",
@@ -158,7 +160,7 @@ export const cancelOrderByUser = async (req, res) => {
       });
     }
 
-    if (!userEmail || order.userEmail !== userEmail) {
+    if (!userEmail || normalizeEmail(order.userEmail) !== normalizeEmail(userEmail)) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to cancel this order",

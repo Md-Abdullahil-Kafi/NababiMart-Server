@@ -1,19 +1,52 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import dotenv from "dotenv";
 import rootRoutes from "./routes/index.js";
 import connectDB from "./config/db.js";
+
+dotenv.config();
 
 await connectDB();
 
 const app = express();
 
+const getAllowedOrigins = () => {
+  const envOrigins = (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    process.env.CLIENT_URL,
+    ...envOrigins,
+  ].filter(Boolean);
+};
+
+const allowedOrigins = getAllowedOrigins();
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      process.env.CLIENT_URL
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow non-browser requests (postman/server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      try {
+        if (/\.vercel\.app$/i.test(new URL(origin).hostname)) {
+          return callback(null, true);
+        }
+      } catch (error) {
+        return callback(new Error("CORS: Invalid origin"));
+      }
+
+      return callback(new Error("CORS: Origin not allowed"));
+    },
     credentials: true,
   })
 );

@@ -8,6 +8,11 @@ const getBearerToken = (authHeader = "") => {
   return authHeader.slice(7);
 };
 
+const isFirebaseConfigError = (error) =>
+  error?.message?.includes("Missing Firebase Admin credentials") ||
+  error?.message?.includes("Failed to parse private key") ||
+  error?.message?.includes("Invalid PEM formatted message");
+
 export const requireAuth = async (req, res, next) => {
   try {
     const token = getBearerToken(req.headers.authorization);
@@ -29,6 +34,14 @@ export const requireAuth = async (req, res, next) => {
 
     next();
   } catch (error) {
+    if (isFirebaseConfigError(error)) {
+      console.error("Firebase Admin configuration error:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Authentication service is not configured correctly.",
+      });
+    }
+
     return res.status(401).json({
       success: false,
       message: "Unauthorized. Invalid or expired token.",

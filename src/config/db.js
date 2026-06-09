@@ -11,9 +11,12 @@ const connectDB = async () => {
     if (!process.env.MONGODB_URI) {
       throw new Error("MONGODB_URI is not configured");
     }
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const dbName = process.env.MONGODB_DB_NAME || "nababimart";
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      dbName,
+    });
     isConnected = conn.connections[0].readyState === 1;
-    console.log("MongoDB connected");
+    console.log(`MongoDB connected (db: ${dbName})`);
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
     throw error;
